@@ -1,139 +1,77 @@
 ---
 name: telethon-session
-description: Generate Telethon .session files for user-account login to Telegram. Use when: (1) user wants to test a Telegram bot as a real user, (2) user needs to interact with Telegram via user identity, (3) creating a Telegram session for Telethon-based automation, (4) mentions telethon, telegram session, or user-account login. After this skill is installed, prompt the user to complete the one-time initialization flow before first real use: run `bash scripts/setup_env.sh` to create `.env` with `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and `TELEGRAM_PHONE`, then run `python3 scripts/login.py --session telegram_session` to create the reusable `.session` file. If the user has not initialized yet, stop and ask them to do the initialization first. NOT for: bot-token-based bots (no session needed).
+description: Create and use a Telethon .session for Telegram user-account login (not bot-token). Use when the user needs Telethon-based user identity automation, including generating the session, sending messages, or reading chats. Not for bot-token-based bots.
 ---
 
 # Telethon Session Generator
 
-Generate a `.session` file to authenticate a Telegram **user account** via Telethon.
+Generate a `.session` file to authenticate a Telegram **user account** via Telethon, and use that session to **send** and **read** messages.
 
-## First-run requirement
+## One-time initialization (required)
 
-After this skill is installed, **prompt the user to complete initialization before first real use**.
+Before any send/read tasks, the user must do a one-time login to create a reusable `.session` file.
 
-Required one-time initialization flow:
+1) Install deps (recommended in a venv):
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -U pip
+pip install telethon
+```
 
-1. Run:
-   ```bash
-   bash scripts/setup_env.sh
-   ```
-2. This writes a local `.env` file with:
-   - `TELEGRAM_API_ID`
-   - `TELEGRAM_API_HASH`
-   - `TELEGRAM_PHONE`
-   - optional `TELETHON_SESSION`
-3. Then run:
-   ```bash
-   python3 scripts/login.py --session telegram_session
-   ```
-4. This creates the reusable Telethon `.session` file.
-
-If `.env`, required credentials, or the `.session` file are missing, **do not continue with send/read tasks**. Tell the user the skill still needs initialization and point them to the commands above.
-
-## Prerequisites
-
-- `telethon` (install in a venv)
-- API credentials from <https://my.telegram.org> (`api_id` + `api_hash`)
-
-## Recommended: set as system environment variables
-
-Set these once, then you won't need to re-type them:
-
-- `TELEGRAM_API_ID`
-- `TELEGRAM_API_HASH`
-- `TELEGRAM_PHONE`
-- (optional) `TELETHON_SESSION` (default: `telegram_session`)
-
-### One-command interactive setup (writes a local .env)
-
-Run:
-
+2) Create `.env` interactively:
 ```bash
 bash scripts/setup_env.sh
 ```
 
-This script will:
-- Prompt you interactively for the 3 values (api_id/api_hash/phone)
-- Write them to `.env` (gitignored)
-- Tell you the exact `source` command to load them into your current shell
-
-### Option A: put them in a local `.env` file (recommended)
-
-In this skill directory, create `.env` (it is ignored by git):
-
+3) Login once to generate the session file:
 ```bash
-TELEGRAM_API_ID=__SET_ME__
-TELEGRAM_API_HASH=__SET_ME__
-TELEGRAM_PHONE=__SET_ME__
-TELETHON_SESSION=telegram_session
+set -a && source .env && set +a
+python3 scripts/login.py --session "${TELETHON_SESSION:-telegram_session}"
 ```
 
-Lock down file permissions:
+Steps 2 and 3 are required. Prefer asking the user to run them locally. Only run them on the user’s behalf if the user explicitly requests it and provides the required values.
 
+**Stop condition:** if `.env` or `*.session` is missing, **do not** attempt send/read. Ask the user to complete the steps above.
+
+## Day-to-day actions
+
+All actions assume:
+- you are in this skill directory
+- venv is activated
+- env vars loaded from `.env`
+
+Load env vars:
 ```bash
-chmod 600 .env
+set -a && source .env && set +a
 ```
 
-Template: `.env.example`
-
-### Option B: export them in your shell
-
+### Send a message (scripts/send.py)
 ```bash
-export TELEGRAM_API_ID=__SET_ME__
-export TELEGRAM_API_HASH="..."
-export TELEGRAM_PHONE="+8613..."
-export TELETHON_SESSION=telegram_session
+python3 scripts/send.py --to @username --message "hi"
 ```
 
-## Quick Start (generate session)
-
-### Interactive (safe: avoids putting secrets in command history)
-
+### Read recent messages (scripts/read.py)
 ```bash
-python3 scripts/login.py --session telegram_session
+python3 scripts/read.py --with @username --limit 10
 ```
 
-The script will prompt for:
-- `api_id`
-- `api_hash` (hidden)
-- `phone`
-- Telegram login code (+ optional 2FA password)
+## Notes / safety
 
-On success, `<session_name>.session` is created in the working directory.
+- Treat `.session` like a password. Do **not** commit it.
+- This is for **user-account login** (Telethon session). Not for bot-token bots.
+- If Telegram invalidates the session, rerun the login step to regenerate it.
 
-## Common actions
-
-### Send a message
-
-```bash
-python3 scripts/send_message.py --api-id YOUR_ID --to @username --message "hi" --session telegram_session
-```
-
-(or omit `--api-hash` to be prompted with hidden input)
-
-### Read last messages from a dialog
-
-```bash
-python3 scripts/read_dialog.py --api-id YOUR_ID --with @username --limit 3 --session telegram_session
-```
-
-## Key Notes
-
-- **Session file is reusable** — no need to re-login unless Telegram invalidates it
-- **Do NOT commit `.session` files** to version control (treat as secrets)
-- **Bot token ≠ session** — bots use `bot_token=` in Telethon, no session file needed
-- If `pip install telethon` fails on externally-managed Python, use a venv:
-  ```bash
-  python3 -m venv venv
-  source venv/bin/activate
-  pip install telethon
-  ```
-
-## Using the Session File (code)
+## Minimal code example
 
 ```python
 from telethon import TelegramClient
 
 client = TelegramClient('telegram_session', api_id, api_hash)
-await client.start()  # auto-loads session, no prompt needed
+await client.start()
 ```
+
+## Repository references
+
+- Extra details live in `references.md`.
+- Scripts live in `scripts/`.

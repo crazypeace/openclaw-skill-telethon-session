@@ -26,39 +26,35 @@ These are task inputs and may change every run:
 ## Typical send flow
 
 1. Ensure `telethon` is installed.
-2. Ensure the user has provided `api_id` and `api_hash`.
+2. Ensure the user has provided `api_id` and `api_hash` (prefer `.env`).
 3. Ensure a valid `.session` file exists.
-4. Ask for per-run inputs: `username` and `text`.
-5. Run `scripts/send_message.py`.
+4. Ask for per-run inputs: `to` and `message`.
+5. Run `scripts/send.py`.
 
 ## Typical read flow
 
 1. Ensure `telethon` is installed.
-2. Ensure the user has provided `api_id` and `api_hash`.
+2. Ensure the user has provided `api_id` and `api_hash` (prefer `.env`).
 3. Ensure a valid `.session` file exists.
-4. Ask for per-run inputs: `username` and `limit`.
-5. Run `scripts/read_messages.py`.
+4. Ask for per-run inputs: `with` and `limit`.
+5. Run `scripts/read.py`.
 
 ## Examples
 
 ### Send
 
 ```bash
-python3 scripts/send_message.py \
-  --api-id YOUR_ID \
-  --api-hash YOUR_HASH \
-  --session /path/to/telegram_session \
-  --username crazypeace \
-  --text '测试信息'
+set -a && source .env && set +a
+python3 scripts/send.py \
+  --to @crazypeace \
+  --message '测试信息'
 ```
 
 ### Read multiple recent messages
 
 ```bash
-python3 scripts/read_messages.py \
-  --api-id YOUR_ID \
-  --api-hash YOUR_HASH \
-  --session /path/to/telegram_session \
-  --username crazypeace \
+set -a && source .env && set +a
+python3 scripts/read.py \
+  --with @crazypeace \
   --limit 10
 ```
