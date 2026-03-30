@@ -13,6 +13,7 @@ Before any send/read tasks, the user must do a one-time login to create a reusab
 
 1) Install deps (recommended in a venv):
 ```bash
+apt install python3.13-venv
 python3 -m venv venv
 source venv/bin/activate
 pip install -U pip
@@ -27,7 +28,20 @@ bash scripts/setup_env.sh
 3) Login once to generate the session file:
 ```bash
 set -a && source .env && set +a
-python3 scripts/login.py --session "${TELETHON_SESSION:-telegram_session}"
+python3 scripts/login.py
+```
+
+`login.py` now supports this precedence:
+- command-line flags
+- environment variables (`TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_PHONE`, `TELETHON_SESSION`)
+- interactive prompts
+
+So after loading `.env`, you usually do **not** need to pass `--api-id`, `--api-hash`, `--phone`, or `--session` manually.
+
+If needed, you can still override env vars explicitly:
+```bash
+python3 scripts/login.py --session other_session
+python3 scripts/login.py --api-id 12345 --api-hash "..." --phone "+8613..."
 ```
 
 Steps 2 and 3 are required. Prefer asking the user to run them locally. Only run them on the user’s behalf if the user explicitly requests it and provides the required values.
