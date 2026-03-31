@@ -65,6 +65,13 @@ set -a && source .env && set +a
 python3 scripts/send.py --to @username --message "hi"
 ```
 
+### Send a message to a forum topic (scripts/send_to_topic.py)
+```bash
+python3 scripts/send_to_topic.py --chat -1001234567890 --topic 43 --message "hi"
+```
+
+`--topic` is the forum topic root message id (also used as the topic/thread id in many Telegram contexts).
+
 ### Read recent messages (scripts/read.py)
 ```bash
 python3 scripts/read.py --with @username --limit 10

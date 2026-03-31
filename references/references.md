@@ -31,6 +31,14 @@ These are task inputs and may change every run:
 4. Ask for per-run inputs: `to` and `message`.
 5. Run `scripts/send.py`.
 
+## Typical forum-topic send flow
+
+1. Ensure `telethon` is installed.
+2. Ensure the user has provided `api_id` and `api_hash` (prefer `.env`).
+3. Ensure a valid `.session` file exists.
+4. Ask for per-run inputs: `chat`, `topic`, and `message`.
+5. Run `scripts/send_to_topic.py`.
+
 ## Typical read flow
 
 1. Ensure `telethon` is installed.
@@ -47,6 +55,16 @@ These are task inputs and may change every run:
 set -a && source .env && set +a
 python3 scripts/send.py \
   --to @crazypeace \
+  --message '测试信息'
+```
+
+### Send to a forum topic
+
+```bash
+set -a && source .env && set +a
+python3 scripts/send_to_topic.py \
+  --chat -1001234567890 \
+  --topic 43 \
   --message '测试信息'
 ```
 
