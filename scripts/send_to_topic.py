@@ -17,7 +17,8 @@ import getpass
 import os
 from pathlib import Path
 
-from telethon import TelegramClient
+from telethon import TelegramClient, utils
+from telethon.tl.types import PeerChannel, PeerChat
 
 
 def _env(name: str):
@@ -52,6 +53,37 @@ def _need_str(value, env_name: str, label: str, secret: bool = False) -> str:
         print("Value cannot be empty.")
 
 
+def _looks_numeric_chat(value: str) -> bool:
+    s = str(value).strip()
+    return s.startswith("-") and s[1:].isdigit() or s.isdigit()
+
+
+async def _resolve_chat_entity(client: TelegramClient, raw_chat: str):
+    raw = str(raw_chat).strip()
+
+    if _looks_numeric_chat(raw):
+        n = int(raw)
+        try:
+            real_id, peer_type = utils.resolve_id(n)
+            if peer_type is PeerChannel:
+                return await client.get_entity(PeerChannel(real_id))
+            if peer_type is PeerChat:
+                return await client.get_entity(PeerChat(real_id))
+        except Exception:
+            pass
+
+        try:
+            dialogs = await client.get_dialogs(limit=200)
+            for dialog in dialogs:
+                entity = dialog.entity
+                if getattr(entity, "id", None) == abs(n) or getattr(entity, "id", None) == real_id:
+                    return entity
+        except Exception:
+            pass
+
+    return await client.get_entity(raw_chat)
+
+
 async def main(args):
     api_id = _need_int(args.api_id, "TELEGRAM_API_ID", "App api_id: ")
     api_hash = _need_str(args.api_hash, "TELEGRAM_API_HASH", "App api_hash: ", secret=True)
@@ -66,7 +98,7 @@ async def main(args):
             "Session is not authorized. Re-run login first (python3 scripts/login.py --session ...)."
         )
 
-    entity = await client.get_entity(args.chat)
+    entity = await _resolve_chat_entity(client, args.chat)
     topic_root = await client.get_messages(entity, ids=args.topic)
     if not topic_root:
         raise SystemExit(
