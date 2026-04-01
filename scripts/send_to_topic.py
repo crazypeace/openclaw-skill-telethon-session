@@ -52,6 +52,13 @@ def _need_str(value, env_name: str, label: str, secret: bool = False) -> str:
         print("Value cannot be empty.")
 
 
+def _parse_chat(chat):
+    # 如果是纯数字（包括 -100 开头），转 int
+    if isinstance(chat, str) and chat.lstrip("-").isdigit():
+        return int(chat)
+    return chat
+
+
 async def main(args):
     api_id = _need_int(args.api_id, "TELEGRAM_API_ID", "App api_id: ")
     api_hash = _need_str(args.api_hash, "TELEGRAM_API_HASH", "App api_hash: ", secret=True)
@@ -66,7 +73,7 @@ async def main(args):
             "Session is not authorized. Re-run login first (python3 scripts/login.py --session ...)."
         )
 
-    entity = await client.get_entity(args.chat)
+    entity = await client.get_entity(_parse_chat(args.chat))
     topic_root = await client.get_messages(entity, ids=args.topic)
     if not topic_root:
         raise SystemExit(
